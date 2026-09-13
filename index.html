@@ -131,9 +131,66 @@
     .hero h1{font-size:2rem;}
     nav a{margin-left:14px;font-size:0.85rem;}
   }
+
+  #login-gate{
+    position:fixed;inset:0;
+    background:var(--bg);
+    display:flex;align-items:center;justify-content:center;
+    z-index:1000;
+    padding:24px;
+  }
+  #login-gate .box{
+    width:100%;max-width:360px;
+    background:var(--bg-soft);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:32px;
+    text-align:center;
+  }
+  #login-gate h2{font-size:1.3rem;margin-bottom:8px;}
+  #login-gate p{color:var(--muted);font-size:0.9rem;margin-bottom:20px;}
+  #login-gate input[type=password]{
+    width:100%;
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:12px;
+    color:var(--text);
+    font-size:0.95rem;
+    margin-bottom:12px;
+  }
+  #login-gate button{
+    width:100%;
+    background:var(--accent);
+    color:#04211d;
+    border:none;
+    padding:12px;
+    border-radius:6px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  #login-gate .error{
+    color:#ff8080;
+    font-size:0.85rem;
+    margin-top:10px;
+    min-height:1em;
+  }
+  #site-content{display:none;}
 </style>
 </head>
 <body>
+
+<div id="login-gate">
+  <div class="box">
+    <h2>Private site</h2>
+    <p>Enter the password to view yorvion.com.</p>
+    <input type="password" id="gate-password" placeholder="Password" autofocus>
+    <button id="gate-submit">Enter</button>
+    <div class="error" id="gate-error"></div>
+  </div>
+</div>
+
+<div id="site-content">
 
 <header>
   <div class="wrap">
@@ -217,6 +274,52 @@
     &copy; 2026 Yorvion. Built as a practice project.
   </div>
 </footer>
+
+</div>
+
+<script>
+(function(){
+  var CORRECT_HASH = "3e59db92275159767ceb98d0f756587a2bed677634f787d9677337635d2d12f6";
+  var gate = document.getElementById('login-gate');
+  var content = document.getElementById('site-content');
+  var input = document.getElementById('gate-password');
+  var submit = document.getElementById('gate-submit');
+  var errorEl = document.getElementById('gate-error');
+
+  async function sha256(text){
+    var enc = new TextEncoder().encode(text);
+    var buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  }
+
+  function unlock(){
+    gate.style.display = 'none';
+    content.style.display = 'block';
+    sessionStorage.setItem('yorvion-unlocked', '1');
+  }
+
+  async function tryUnlock(){
+    var val = input.value;
+    var hash = await sha256(val);
+    if(hash === CORRECT_HASH){
+      unlock();
+    } else {
+      errorEl.textContent = 'Incorrect password.';
+      input.value = '';
+      input.focus();
+    }
+  }
+
+  submit.addEventListener('click', tryUnlock);
+  input.addEventListener('keydown', function(e){
+    if(e.key === 'Enter') tryUnlock();
+  });
+
+  if(sessionStorage.getItem('yorvion-unlocked') === '1'){
+    unlock();
+  }
+})();
+</script>
 
 </body>
 </html>
